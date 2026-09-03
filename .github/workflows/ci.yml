@@ -30,25 +30,25 @@ concurrency:
 # que volver a clonar y recompilar en cada eslabón. De ahí la caché de `.build`.
 
 jobs:
-  # Va delante de todo y corre en Linux, no en macOS: son comprobaciones de segundos y no
-  # necesitan Xcode. Si el nombre de la rama está mal o hay un secreto, se sabe en medio minuto
-  # en vez de esperar a que termine una compilación que iba a tirarse igual.
-  puerta:
-    name: 0 · Puerta
+  # Los dos primeros corren en paralelo, en Linux y no en macOS: son comprobaciones de
+  # segundos que no necesitan Xcode. Van delante para que un nombre de rama mal puesto o un
+  # secreto se vean en medio minuto, en vez de al final de una compilación que iba a tirarse.
+  #
+  # Un push directo a `main` solo se comprueba si viene de un hotfix. Lo demás que llega a main
+  # viene de un PR que ya pasó la cadena entera.
+  #
+  # El evento `push` no dice de qué rama venía —cuando algo aterriza en main esa información ya
+  # no existe—, así que se mira el mensaje del commit, que es donde git deja el rastro del
+  # merge: "Merge branch 'hotfix/x'" o "Merge pull request #N from usuario/hotfix/x".
+
+  ramas:
+    name: Convención de ramas
     runs-on: ubuntu-latest
-    # Un push directo a `main` solo se comprueba si viene de un hotfix. Lo demás que llega a
-    # main viene de un PR que ya pasó la cadena.
-    #
-    # El evento `push` no dice de qué rama venía —cuando algo aterriza en main, esa información
-    # ya no existe—, así que se mira el mensaje del commit, que es donde git deja el rastro:
-    # "Merge branch 'hotfix/x'" o "Merge pull request #N from usuario/hotfix/x".
     if: |
       github.event_name != 'push'
       || github.ref != 'refs/heads/main'
       || contains(github.event.head_commit.message, 'hotfix/')
     steps:
-      - uses: actions/checkout@v7
-
       - name: La rama de un PR se llama fix/… o feature/…
         if: github.event_name == 'pull_request'
         run: |
@@ -60,12 +60,27 @@ jobs:
           fi
           echo "Rama '$RAMA': correcta."
 
+      - name: Fuera de un PR no hay rama que comprobar
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "Evento '${{ github.event_name }}' — la convención de ramas solo aplica a los PR."
+
+  secretos:
+    name: Secretos
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'push'
+      || github.ref != 'refs/heads/main'
+      || contains(github.event.head_commit.message, 'hotfix/')
+    steps:
+      - uses: actions/checkout@v7
+
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
-      # Busca secretos en **todo** lo que está versionado, no solo en lo que cambia: una clave
-      # que entró hace tres commits sigue siendo una clave publicada.
+      # Busca en **todo** lo que está versionado, no solo en lo que cambia: una clave que entró
+      # hace tres commits sigue siendo una clave publicada.
       #
       # `.secrets.baseline` lleva los hallazgos ya revisados —hoy, dos identificadores de objeto
       # que Xcode escribe en el esquema y que parecen hexadecimal de alta entropía—. Un hallazgo
@@ -77,7 +92,7 @@ jobs:
 
   test:
     name: 1 · Tests
-    needs: puerta
+    needs: [ramas, secretos]
     runs-on: macos-15
     # El cron semanal existe solo para que CodeQL reanalice con consultas nuevas. CodeQL
     # necesita que el repositorio sea público (en privado hace falta Advanced Security, de

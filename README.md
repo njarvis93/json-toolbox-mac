@@ -3,7 +3,13 @@
 App nativa de macOS para **leer, validar, formatear, convertir, navegar y comparar JSON**.
 Swift + SwiftUI, sin dependencias externas, sin Electron.
 
-![CI](https://github.com/njarvis93/json-toolbox-mac/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/njarvis93/json-toolbox-mac/actions/workflows/ci.yml/badge.svg)](https://github.com/njarvis93/json-toolbox-mac/actions/workflows/ci.yml)
+[![Release](https://github.com/njarvis93/json-toolbox-mac/actions/workflows/release.yml/badge.svg)](https://github.com/njarvis93/json-toolbox-mac/actions/workflows/release.yml)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.0-blue)
+![macOS](https://img.shields.io/badge/macOS-14%2B-lightgrey)
+![Swift](https://img.shields.io/badge/Swift-6-orange)
+![Cobertura](https://img.shields.io/badge/cobertura%20JSONCore-%E2%89%A580%25-brightgreen)
+![Licencia](https://img.shields.io/badge/licencia-PolyForm%20Noncommercial-informational)
 
 ## Qué hace
 
@@ -17,7 +23,7 @@ Swift + SwiftUI, sin dependencias externas, sin Electron.
 
 ## Instalar
 
-Descarga el `.zip` de la última [release](https://github.com/njarvis93/json-toolbox-mac/releases)
+**Versión 1.0.0.** Descarga el `.zip` de la última [release](https://github.com/njarvis93/json-toolbox-mac/releases)
 y arrastra la app a Aplicaciones. Va firmada ad-hoc pero **sin notarizar**, así que la primera vez
 hay que abrirla con clic derecho → Abrir, o quitarle la cuarentena:
 
@@ -108,12 +114,20 @@ de inspección es más útil verlas.
 anterior pasó, así que la señal llega en orden de fundamento y no se gastan minutos compilando y
 analizando algo que ya se sabe roto.
 
-| | Qué hace |
-|---|---|
-| **0 · Puerta** | Nombre de la rama y `detect-secrets`. Corre en Linux: son segundos y no necesita Xcode. |
-| **1 · Tests** | 168 de `JSONCore` y 33 de la capa de app. Calcula el informe de cobertura. |
-| **2 · Calidad** | Cobertura de `JSONCore` ≥ 80 %, formato con `swift-format`, compilar sin un solo aviso, y CodeQL. |
-| **3 · Build** | La `.app` universal en Release, comprobando que el bundle lleva el icono y la asociación con `.json`. |
+| Job | Dónde | Qué hace |
+|---|---|---|
+| **Convención de ramas** | Linux | Un PR sale de `fix/…` o `feature/…`, o se rechaza. |
+| **Secretos** | Linux | `detect-secrets` sobre todo lo versionado, contra `.secrets.baseline`. |
+| **1 · Tests** | macOS | 168 de `JSONCore` y 33 de la capa de app. Calcula el informe de cobertura. |
+| **2 · Calidad** | macOS | Cobertura de `JSONCore` ≥ 80 %, formato con `swift-format`, compilar sin un solo aviso, y CodeQL. |
+| **3 · Build** | macOS | La `.app` universal en Release, comprobando que el bundle lleva el icono y la asociación con `.json`. |
+
+Los dos primeros van en paralelo y en Linux: son segundos y no necesitan Xcode, así que un nombre
+de rama mal puesto o un secreto se ven en medio minuto en vez de al final de una compilación que
+iba a tirarse igual. Los tres de macOS van encadenados con `needs:`.
+
+GitHub solo publica badges **por workflow**, no por job: el badge de CI de arriba se pone en rojo
+si falla cualquiera de los cinco. Para ver cuál, el enlace lleva a la ejecución.
 
 `release.yml` va aparte porque lo dispara un tag `vX.Y.Z`, no un push: compila, empaqueta y
 publica la `.app` en una Release.
