@@ -2,9 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main]
-    # Un cambio solo de documentación no puede romper los tests, y en un repositorio privado
-    # cada ejecución cuesta minutos de cuota — los runners de macOS se facturan a 10x.
+    # A `main` se llega por PR, y el PR ya pasó la cadena entera: volver a correrla al mezclar
+    # es pagar dos veces por la misma comprobación. La excepción es el hotfix, que por
+    # definición se salta el PR — y ahí sí hay que comprobarlo, aunque sea después.
+    branches: [main, 'hotfix/**']
+    # Un cambio solo de documentación no puede romper los tests, y cada ejecución cuesta
+    # minutos de cuota — los runners de macOS se facturan a 10x.
     paths-ignore: ['**/*.md', 'docs/**', 'Ejemplos/**', 'LICENSE']
   pull_request:
     paths-ignore: ['**/*.md', 'docs/**', 'Ejemplos/**', 'LICENSE']
@@ -26,13 +29,58 @@ concurrency:
 # que volver a clonar y recompilar en cada eslabón. De ahí la caché de `.build`.
 
 jobs:
+  # Va delante de todo y corre en Linux, no en macOS: son comprobaciones de segundos, y un
+  # minuto de macOS cuesta diez veces más. Si el nombre de la rama está mal o hay un secreto,
+  # se sabe antes de arrancar una sola compilación.
+  puerta:
+    name: 0 · Puerta
+    runs-on: ubuntu-latest
+    # Un push directo a `main` solo se comprueba si viene de un hotfix. Lo demás que llega a
+    # main viene de un PR que ya pasó la cadena.
+    #
+    # El evento `push` no dice de qué rama venía —cuando algo aterriza en main, esa información
+    # ya no existe—, así que se mira el mensaje del commit, que es donde git deja el rastro:
+    # "Merge branch 'hotfix/x'" o "Merge pull request #N from usuario/hotfix/x".
+    if: |
+      github.event_name != 'push'
+      || github.ref != 'refs/heads/main'
+      || contains(github.event.head_commit.message, 'hotfix/')
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: La rama de un PR se llama fix/… o feature/…
+        if: github.event_name == 'pull_request'
+        run: |
+          RAMA="${{ github.head_ref }}"
+          if [[ ! "$RAMA" =~ ^(fix|feature)/ ]]; then
+            echo "::error::La rama '$RAMA' no vale. Los PR salen de 'fix/...' o 'feature/...';"
+            echo "::error::los hotfix van directos a main y se comprueban al llegar."
+            exit 1
+          fi
+          echo "Rama '$RAMA': correcta."
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      # Busca secretos en **todo** lo que está versionado, no solo en lo que cambia: una clave
+      # que entró hace tres commits sigue siendo una clave publicada.
+      #
+      # `.secrets.baseline` lleva los hallazgos ya revisados —hoy, dos identificadores de objeto
+      # que Xcode escribe en el esquema y que parecen hexadecimal de alta entropía—. Un hallazgo
+      # que no esté ahí hace fallar el job. Para revisar uno nuevo: ./Scripts/secretos.sh --revisar
+      - name: detect-secrets
+        run: |
+          pip install --quiet detect-secrets
+          detect-secrets-hook --baseline .secrets.baseline $(git ls-files)
+
   test:
     name: 1 · Tests
+    needs: puerta
     runs-on: macos-15
     # El cron semanal existe solo para que CodeQL reanalice con consultas nuevas. Si el
-    # repositorio es privado, CodeQL no corre, así que esa ejecución sería la cadena entera
-    # para nada — y en privado cada minuto de macOS se factura a 10x. Los otros dos eslabones
-    # se saltan solos por el `needs:`.
+    # repositorio fuera privado, CodeQL no corre y esa ejecución sería la cadena entera para
+    # nada. Los otros eslabones se saltan solos por el `needs:`.
     if: github.event_name != 'schedule' || github.event.repository.visibility == 'public'
     steps:
       - uses: actions/checkout@v7

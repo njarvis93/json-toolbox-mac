@@ -33,6 +33,7 @@ Requiere **macOS 14 o superior**.
 swift test                                    # 168 tests de JSONCore, menos de un segundo
 ./Scripts/coverage.sh 80                      # cobertura de JSONCore (91,83 % hoy)
 ./Scripts/format.sh                           # aplica el formato del proyecto
+./Scripts/secretos.sh                         # busca secretos, igual que CI
 ./Scripts/package.sh                          # .app universal firmada ad-hoc en build/
 ```
 
@@ -109,12 +110,20 @@ analizando algo que ya se sabe roto.
 
 | | Qué hace |
 |---|---|
+| **0 · Puerta** | Nombre de la rama y `detect-secrets`. Corre en Linux, no en macOS: son segundos, y un minuto de macOS cuesta diez veces más. |
 | **1 · Tests** | 168 de `JSONCore` y 33 de la capa de app. Calcula el informe de cobertura. |
 | **2 · Calidad** | Cobertura de `JSONCore` ≥ 80 %, formato con `swift-format`, compilar sin un solo aviso, y CodeQL. |
 | **3 · Build** | La `.app` universal en Release, comprobando que el bundle lleva el icono y la asociación con `.json`. |
 
 `release.yml` va aparte porque lo dispara un tag `vX.Y.Z`, no un push: compila, empaqueta y
 publica la `.app` en una Release.
+
+**Cuándo corre.** En todos los PR, y en los push a `main` **solo si vienen de un hotfix**: a main
+se llega por PR, y ese PR ya pasó la cadena entera, así que repetirla al mezclar es pagar dos
+veces por lo mismo. El hotfix es la excepción porque se salta el PR por definición.
+
+**Cómo se llaman las ramas.** Los PR salen de `fix/…` o `feature/…`; la puerta los rechaza si no.
+Los hotfix van directos a `main`, o a una rama `hotfix/…` que también dispara la cadena.
 
 **CodeQL solo corre si el repositorio es público.** El análisis de código es gratis ahí, pero en
 uno privado necesita GitHub Advanced Security, que es de pago: el análisis funciona y lo que falla
