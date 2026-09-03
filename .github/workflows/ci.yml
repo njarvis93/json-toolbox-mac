@@ -6,8 +6,9 @@ on:
     # es pagar dos veces por la misma comprobación. La excepción es el hotfix, que por
     # definición se salta el PR — y ahí sí hay que comprobarlo, aunque sea después.
     branches: [main, 'hotfix/**']
-    # Un cambio solo de documentación no puede romper los tests, y cada ejecución cuesta
-    # minutos de cuota — los runners de macOS se facturan a 10x.
+    # Un cambio solo de documentación no puede romper los tests. En este repositorio, que es
+    # público, los minutos son gratis: se hace por no ensuciar el historial de ejecuciones con
+    # doce minutos de compilación para arreglar una errata.
     paths-ignore: ['**/*.md', 'docs/**', 'Ejemplos/**', 'LICENSE']
   pull_request:
     paths-ignore: ['**/*.md', 'docs/**', 'Ejemplos/**', 'LICENSE']
@@ -29,9 +30,9 @@ concurrency:
 # que volver a clonar y recompilar en cada eslabón. De ahí la caché de `.build`.
 
 jobs:
-  # Va delante de todo y corre en Linux, no en macOS: son comprobaciones de segundos, y un
-  # minuto de macOS cuesta diez veces más. Si el nombre de la rama está mal o hay un secreto,
-  # se sabe antes de arrancar una sola compilación.
+  # Va delante de todo y corre en Linux, no en macOS: son comprobaciones de segundos y no
+  # necesitan Xcode. Si el nombre de la rama está mal o hay un secreto, se sabe en medio minuto
+  # en vez de esperar a que termine una compilación que iba a tirarse igual.
   puerta:
     name: 0 · Puerta
     runs-on: ubuntu-latest
@@ -78,9 +79,10 @@ jobs:
     name: 1 · Tests
     needs: puerta
     runs-on: macos-15
-    # El cron semanal existe solo para que CodeQL reanalice con consultas nuevas. Si el
-    # repositorio fuera privado, CodeQL no corre y esa ejecución sería la cadena entera para
-    # nada. Los otros eslabones se saltan solos por el `needs:`.
+    # El cron semanal existe solo para que CodeQL reanalice con consultas nuevas. CodeQL
+    # necesita que el repositorio sea público (en privado hace falta Advanced Security, de
+    # pago), así que si algún día vuelve a serlo esa ejecución no tendría sentido y se salta
+    # entera. Los otros eslabones se caen solos por el `needs:`.
     if: github.event_name != 'schedule' || github.event.repository.visibility == 'public'
     steps:
       - uses: actions/checkout@v7

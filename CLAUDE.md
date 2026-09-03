@@ -19,8 +19,8 @@ Este archivo recoge lo que no se deduce leyendo el código.
   91,83 %). La de la app se publica pero no bloquea: más de la mitad del target son vistas y
   paneles que no corren sin interfaz.
 - CI es **una cadena** en `ci.yml`: puerta → tests → calidad → build, con `needs:`. La puerta
-  (nombre de rama y `detect-secrets`) corre en **Linux** a propósito: son segundos y un minuto de
-  macOS cuesta 10x. Los PR salen de `fix/…` o `feature/…`; a `main` solo se le corre la cadena si
+  (nombre de rama y `detect-secrets`) corre en **Linux** a propósito: son segundos y no necesitan
+  Xcode, así que un fallo de nombre o un secreto se ve sin esperar a una compilación. Los PR salen de `fix/…` o `feature/…`; a `main` solo se le corre la cadena si
   el push viene de un hotfix, porque lo demás llega por un PR que ya pasó. Cada eslabón corre en
   una máquina limpia, así que añadir pasos ahí cuesta reloj; si algo se puede comprobar en el
   eslabón que ya tiene el `.build` montado, va ahí. El informe de cobertura se calcula en tests

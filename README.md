@@ -110,7 +110,7 @@ analizando algo que ya se sabe roto.
 
 | | Qué hace |
 |---|---|
-| **0 · Puerta** | Nombre de la rama y `detect-secrets`. Corre en Linux, no en macOS: son segundos, y un minuto de macOS cuesta diez veces más. |
+| **0 · Puerta** | Nombre de la rama y `detect-secrets`. Corre en Linux: son segundos y no necesita Xcode. |
 | **1 · Tests** | 168 de `JSONCore` y 33 de la capa de app. Calcula el informe de cobertura. |
 | **2 · Calidad** | Cobertura de `JSONCore` ≥ 80 %, formato con `swift-format`, compilar sin un solo aviso, y CodeQL. |
 | **3 · Build** | La `.app` universal en Release, comprobando que el bundle lleva el icono y la asociación con `.json`. |
