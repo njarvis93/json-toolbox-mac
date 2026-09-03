@@ -1,0 +1,12 @@
+.DS_Store
+/.build
+# En cualquier nivel: xcodebuild deja un build/ junto al .xcodeproj, no solo en la raíz.
+build/
+/.swiftpm/xcode/**/xcuserdata
+*.xcuserstate
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+*.xcscmblueprint

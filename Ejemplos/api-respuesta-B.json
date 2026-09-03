@@ -1,0 +1,26 @@
+{
+  "pedido": {
+    "cliente": { "canal": "web", "id": 90071992547409931, "nombre": "Marta Ferreira" },
+    "envio": {
+      "metodo": "express",
+      "prometido": "2026-09-06",
+      "transportista": "SEUR",
+      "seguimiento": "SE9928471X"
+    },
+    "estado": "ENVIADO",
+    "id": "4471-AC",
+    "lineas": [
+      { "sku": "TL-1000", "descripcion": "Portes urgentes",   "cantidad": 1, "precio": 4.950 },
+      { "sku": "TL-8813", "descripcion": "Switch 8 puertos",  "cantidad": 1, "precio": 89.0 },
+      { "sku": "TL-0091", "descripcion": "Router dual-band",  "cantidad": 1, "precio": 42.900 },
+      { "sku": "TL-4420", "descripcion": "Cable Cat6 3m",     "cantidad": 2, "precio": 7.5 }
+    ],
+    "totales": { "subtotal": 151.85, "impuestos": 31.89, "total": 183.74 }
+  },
+  "meta": {
+    "duracionMs": 92,
+    "generadoEn": "2026-09-02T09:41:57Z",
+    "requestId": "req_c07d1e55",
+    "version": "2026-08-21"
+  }
+}

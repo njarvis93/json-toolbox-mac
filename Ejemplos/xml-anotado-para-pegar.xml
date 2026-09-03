@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<respuesta>
+  <estado>ENVIADO</estado>
+  <intentos type="number">3</intentos>
+  <reintentable type="bool">false</reintentable>
+  <transportista type="null"/>
+  <envio type="object">
+    <metodo>express</metodo>
+    <coste type="number">4.95</coste>
+  </envio>
+  <lineas type="array">
+    <item type="object">
+      <sku>TL-0091</sku>
+      <cantidad type="number">1</cantidad>
+    </item>
+    <item type="object">
+      <sku>TL-4420</sku>
+      <cantidad type="number">2</cantidad>
+    </item>
+  </lineas>
+  <entry key="clave con espacios">valor</entry>
+</respuesta>

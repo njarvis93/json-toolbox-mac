@@ -1,0 +1,25 @@
+{
+  "pedidoId": "4471-AC",
+  "entero_grande": 90071992547409931,
+  "decimal_con_cero": 7.50,
+  "negativo": -0.00042,
+  "exponente": 6.02e23,
+  "verdadero": true,
+  "falso": false,
+  "nulo": null,
+  "vacio_texto": "",
+  "acentos": "añadido en la línea 3 · ¿qué tal?",
+  "emoji": "entrega 🚚 confirmada",
+  "comillas_y_barras": "dice \"hola\" y usa C:\\ruta\\archivo",
+  "salto": "primera\nsegunda",
+  "clave con espacios": "no es un nombre XML válido",
+  "1_empieza_por_digito": "tampoco lo es",
+  "objeto_vacio": {},
+  "array_vacio": [],
+  "array_de_escalares": [1, "dos", true, null],
+  "array_de_objetos": [
+    { "sku": "TL-0091", "cantidad": 1, "precio": 42.90 },
+    { "sku": "TL-4420", "cantidad": 2, "precio": 7.50 }
+  ],
+  "anidado": { "nivel1": { "nivel2": { "nivel3": "fondo" } } }
+}

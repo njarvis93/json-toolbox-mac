@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "requestId": "req_8f2a91c4",
+    "generadoEn": "2026-09-02T09:14:03Z",
+    "duracionMs": 148,
+    "version": "2026-08-21"
+  },
+  "pedido": {
+    "id": "4471-AC",
+    "estado": "EN_PREPARACION",
+    "cliente": { "id": 90071992547409931, "nombre": "Marta Ferreira", "canal": "web" },
+    "envio": { "metodo": "estandar", "prometido": "2026-09-06", "transportista": null },
+    "lineas": [
+      { "sku": "TL-0091", "descripcion": "Router dual-band", "cantidad": 1, "precio": 42.90 },
+      { "sku": "TL-4420", "descripcion": "Cable Cat6 3m",    "cantidad": 2, "precio": 7.50 },
+      { "sku": "TL-8813", "descripcion": "Switch 8 puertos",  "cantidad": 1, "precio": 89.00 }
+    ],
+    "totales": { "subtotal": 146.90, "impuestos": 30.85, "total": 177.75 }
+  }
+}

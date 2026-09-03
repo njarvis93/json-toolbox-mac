@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sin anotar: la forma se infiere y los escalares llegan como cadenas. -->
+<pedido>
+  <id>4471-AC</id>
+  <estado>EN_PREPARACION</estado>
+  <cantidad>2</cantidad>
+  <cliente>
+    <nombre>Marta Ferreira</nombre>
+    <canal>web</canal>
+  </cliente>
+  <linea>
+    <sku>TL-0091</sku>
+  </linea>
+  <linea>
+    <sku>TL-4420</sku>
+  </linea>
+</pedido>

@@ -1,0 +1,198 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    # Un cambio solo de documentación no puede romper los tests, y en un repositorio privado
+    # cada ejecución cuesta minutos de cuota — los runners de macOS se facturan a 10x.
+    paths-ignore: ['**/*.md', 'docs/**', 'Ejemplos/**', 'LICENSE']
+  pull_request:
+    paths-ignore: ['**/*.md', 'docs/**', 'Ejemplos/**', 'LICENSE']
+  schedule:
+    # Lunes por la mañana: el análisis de CodeQL mejora con el tiempo aunque el código no
+    # cambie, porque sus consultas se actualizan.
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# La cadena es test → calidad → build, con `needs:`. Encadenado y no en paralelo a propósito:
+# la señal llega en orden de fundamento, y si los tests fallan no se gastan minutos compilando
+# y analizando algo que ya se sabe roto.
+#
+# El coste, que conviene tener presente: cada job arranca en una máquina limpia, así que hay
+# que volver a clonar y recompilar en cada eslabón. De ahí la caché de `.build`.
+
+jobs:
+  test:
+    name: 1 · Tests
+    runs-on: macos-15
+    # El cron semanal existe solo para que CodeQL reanalice con consultas nuevas. Si el
+    # repositorio es privado, CodeQL no corre, así que esa ejecución sería la cadena entera
+    # para nada — y en privado cada minuto de macOS se factura a 10x. Los otros dos eslabones
+    # se saltan solos por el `needs:`.
+    if: github.event_name != 'schedule' || github.event.repository.visibility == 'public'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Versiones
+        run: swift --version && xcodebuild -version
+
+      - name: Caché de build
+        uses: actions/cache@v6
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.swift', 'Sources/**/*.swift', 'Tests/**/*.swift') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: JSONCore (168 tests)
+        run: swift test --enable-code-coverage
+
+      # El número se calcula donde se ejecutaron los tests; quién lo juzga es el job de
+      # calidad. Así no hay que arrastrar todo `.build` de un job a otro.
+      - name: Informe de cobertura
+        run: ./Scripts/coverage.sh --informe cobertura.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cobertura
+          path: cobertura.txt
+
+      # Con -scheme y no -target: `-target` no resuelve la dependencia de paquete y muere con
+      # "unable to resolve module dependency: 'JSONCore'".
+      - name: Capa de app (33 tests)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project JsonToolingApp/JsonToolingApp.xcodeproj \
+            -scheme JsonToolingApp \
+            -destination 'platform=macOS' \
+            -enableCodeCoverage YES \
+            -resultBundlePath TestResults.xcresult \
+            test
+
+      # Informativa a propósito, no una puerta: más de la mitad de ese target son vistas de
+      # SwiftUI y paneles de AppKit que no se pueden ejecutar sin interfaz, así que un umbral
+      # ahí mediría lo que no importa. La puerta está donde vive la lógica, en JSONCore.
+      - name: Cobertura de la app (informativa)
+        if: always()
+        run: |
+          if [ -d TestResults.xcresult ]; then
+            {
+              echo "### Cobertura de la capa de app"
+              echo ''
+              echo '```'
+              xcrun xccov view --report --only-targets TestResults.xcresult || true
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  calidad:
+    name: 2 · Calidad
+    needs: test
+    runs-on: macos-15
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: cobertura
+
+      - name: Cobertura de JSONCore (mínimo 80 %)
+        run: ./Scripts/coverage.sh 80 --desde cobertura.txt
+
+      # `swift-format` viene con Xcode: ni dependencias nuevas ni instalación. La configuración
+      # de `.swift-format` está ajustada al estilo del proyecto y no al revés.
+      - name: Formato
+        run: |
+          xcrun swift-format lint --strict --configuration .swift-format --recursive \
+            Sources Tests JsonToolingApp/JsonToolingApp JsonToolingApp/JsonToolingAppTests
+
+      - name: Cómo arreglar el formato
+        if: failure()
+        run: echo "::notice::Ejecuta ./Scripts/format.sh en local y vuelve a commitear."
+
+      # CodeQL solo corre si el repositorio es **público**: el análisis de código es gratis ahí,
+      # pero en uno privado necesita GitHub Advanced Security, que es de pago, y el job falla al
+      # subir los resultados con "Code scanning is not enabled for this repository" — el análisis
+      # en sí funciona, lo que no se puede es publicarlo. Se deja escrito y condicionado en vez
+      # de borrarlo: el día que el repositorio se haga público, empieza a funcionar solo.
+      - uses: github/codeql-action/init@v4
+        if: github.event.repository.visibility == 'public'
+        with:
+          languages: swift
+          build-mode: manual
+
+      # Se compila la **app** y no solo el paquete: así CodeQL analiza también el código de la
+      # interfaz, y de paso esta compilación comprueba que no haya ni un aviso — el proyecto
+      # está a cero y se queda a cero.
+      - name: Compilar sin avisos
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project JsonToolingApp/JsonToolingApp.xcodeproj \
+            -scheme JsonToolingApp \
+            -destination 'platform=macOS' \
+            build 2>&1 | tee build.log
+          if grep -E "warning:.*\.swift" build.log; then
+            echo "::error::La compilación tiene avisos."
+            exit 1
+          fi
+
+      - uses: github/codeql-action/analyze@v4
+        if: github.event.repository.visibility == 'public'
+        with:
+          category: /language:swift
+
+  build:
+    name: 3 · Build
+    needs: calidad
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+
+      # En Release y para las dos arquitecturas, que es como se distribuye: compilar solo en
+      # Debug y para arm64 deja pasar errores que solo salen al empaquetar de verdad.
+      - name: Compilar la app en Release (universal)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project JsonToolingApp/JsonToolingApp.xcodeproj \
+            -scheme JsonToolingApp \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+            build
+
+      - name: Comprobar el bundle
+        run: |
+          APP="build/DerivedData/Build/Products/Release/JsonTooling.app"
+          test -d "$APP" || { echo "::error::no se generó $APP"; exit 1; }
+          echo "Arquitecturas: $(lipo -archs "$APP/Contents/MacOS/JsonTooling")"
+          # El .json y el icono se han roto antes al mover archivos sin que nada fallara al
+          # compilar; por eso se comprueban en el bundle y no en el fuente.
+          /usr/libexec/PlistBuddy -c "Print :CFBundleDocumentTypes:0:LSItemContentTypes:0" \
+            "$APP/Contents/Info.plist"
+          test -f "$APP/Contents/Resources/AppIcon.icns" || {
+            echo "::error::falta el icono en el bundle"; exit 1; }
+
+      # Se comprime con `ditto` antes de subirlo, y no se sube el .app tal cual: el empaquetado
+      # de artefactos de GitHub no conserva enlaces simbólicos ni permisos, y un bundle de macOS
+      # que pasa por ahí llega inservible. Es la misma razón por la que `package.sh` usa ditto
+      # en vez de `zip`.
+      - name: Comprimir el bundle
+        run: |
+          ditto -c -k --keepParent --sequesterRsrc \
+            build/DerivedData/Build/Products/Release/JsonTooling.app \
+            JsonTooling.zip
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: JsonTooling-app
+          path: JsonTooling.zip

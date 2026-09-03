@@ -1,0 +1,44 @@
+{
+  "tienda": {
+    "nombre": "Almacén Norte",
+    "abierta": true,
+    "pedidos": [
+      {
+        "id": "4471-AC",
+        "estado": "ENVIADO",
+        "cliente": { "nombre": "Marta Ferreira", "vip": true, "canal": "web" },
+        "lineas": [
+          { "sku": "TL-0091", "descripcion": "Router dual-band", "cantidad": 1, "precio": 42.90 },
+          { "sku": "TL-4420", "descripcion": "Cable Cat6 3m",    "cantidad": 2, "precio": 7.50 },
+          { "sku": "TL-8813", "descripcion": "Switch 8 puertos",  "cantidad": 1, "precio": 89.00 }
+        ],
+        "totales": { "subtotal": 146.90, "impuestos": 30.85, "total": 177.75 }
+      },
+      {
+        "id": "4472-BD",
+        "estado": "EN_PREPARACION",
+        "cliente": { "nombre": "Luis Ortega", "vip": false, "canal": "app" },
+        "lineas": [
+          { "sku": "TL-0091", "descripcion": "Router dual-band", "cantidad": 3, "precio": 42.90 },
+          { "sku": "TL-2200", "descripcion": "Antena exterior",  "cantidad": 1, "precio": 15.25 }
+        ],
+        "totales": { "subtotal": 143.95, "impuestos": 30.23, "total": 174.18 }
+      },
+      {
+        "id": "4473-CE",
+        "estado": "CANCELADO",
+        "cliente": { "nombre": "Ana Ruiz", "vip": true, "canal": "telefono" },
+        "lineas": [
+          { "sku": "TL-4420", "descripcion": "Cable Cat6 3m", "cantidad": 10, "precio": 7.50 }
+        ],
+        "totales": { "subtotal": 75.00, "impuestos": 15.75, "total": 90.75 }
+      }
+    ],
+    "almacenes": [
+      { "codigo": "N1", "ciudad": "Vigo",   "stock": { "TL-0091": 12, "TL-4420": 340 } },
+      { "codigo": "N2", "ciudad": "Lugo",   "stock": { "TL-0091": 0,  "TL-8813": 7   } },
+      { "codigo": "N3", "ciudad": "Ourense","stock": { "TL-2200": 55                 } }
+    ]
+  },
+  "generadoEn": "2026-09-02T21:15:00Z"
+}

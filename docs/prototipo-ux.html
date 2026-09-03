@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body style="margin:0">
+<title>JsonTooling</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --chrome:#e9e9eb; --chrome-2:#dedee1; --line:rgba(0,0,0,.13); --line-soft:rgba(0,0,0,.07);
+  --surface:#ffffff; --surface-alt:#f6f6f8; --gutter:#f1f1f4;
+  --text:#1c1c1e; --dim:#6e6e73; --faint:#a5a5aa;
+  --accent:#0a6cff; --accent-soft:rgba(10,108,255,.13);
+  --green:#1f9d4d; --green-bg:rgba(52,199,89,.14);
+  --red:#d8342a; --red-bg:rgba(255,59,48,.13);
+  --amber:#b06e00; --amber-bg:rgba(255,159,10,.16);
+  --k-key:#0b6bb5; --k-str:#c8341f; --k-num:#2a2ad0; --k-lit:#9a1f8f; --k-punc:#8a8a90;
+  --shadow:0 22px 60px -18px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.10);
+  --sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Segoe UI,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,"IBM Plex Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --chrome:#2c2c2f; --chrome-2:#3a3a3e; --line:rgba(255,255,255,.14); --line-soft:rgba(255,255,255,.07);
+    --surface:#1b1b1d; --surface-alt:#232326; --gutter:#212124;
+    --text:#f2f2f7; --dim:#9b9ba1; --faint:#6a6a70;
+    --accent:#3f8dff; --accent-soft:rgba(63,141,255,.20);
+    --green:#4fce74; --green-bg:rgba(52,199,89,.16);
+    --red:#ff6a5f; --red-bg:rgba(255,59,48,.18);
+    --amber:#f0aa2c; --amber-bg:rgba(255,159,10,.18);
+    --k-key:#7fb6f5; --k-str:#fc6a5d; --k-num:#d0bf69; --k-lit:#fc5fa3; --k-punc:#7d7d86;
+    --shadow:0 22px 60px -18px rgba(0,0,0,.75), 0 2px 6px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --chrome:#2c2c2f; --chrome-2:#3a3a3e; --line:rgba(255,255,255,.14); --line-soft:rgba(255,255,255,.07);
+  --surface:#1b1b1d; --surface-alt:#232326; --gutter:#212124;
+  --text:#f2f2f7; --dim:#9b9ba1; --faint:#6a6a70;
+  --accent:#3f8dff; --accent-soft:rgba(63,141,255,.20);
+  --green:#4fce74; --green-bg:rgba(52,199,89,.16);
+  --red:#ff6a5f; --red-bg:rgba(255,59,48,.18);
+  --amber:#f0aa2c; --amber-bg:rgba(255,159,10,.18);
+  --k-key:#7fb6f5; --k-str:#fc6a5d; --k-num:#d0bf69; --k-lit:#fc5fa3; --k-punc:#7d7d86;
+  --shadow:0 22px 60px -18px rgba(0,0,0,.75), 0 2px 6px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-alt);color:var(--text);font-family:var(--sys);font-size:13px;-webkit-font-smoothing:antialiased}
+.page{max-width:1180px;margin:0 auto;padding:26px 20px 40px;display:flex;flex-direction:column;gap:16px}
+.lede{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;padding:0 4px}
+.lede h1{font-size:15px;font-weight:600;letter-spacing:-.01em;margin:0}
+.lede p{margin:0;color:var(--dim);font-size:12.5px}
+.badge{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
+
+/* window chrome */
+.win{background:var(--surface);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;height:664px}
+.titlebar{height:38px;flex:0 0 auto;background:var(--chrome);border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 12px}
+.lights{display:flex;gap:8px}
+.lights i{width:12px;height:12px;border-radius:50%;display:block}
+.lights i:nth-child(1){background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+.wtitle{font-size:12.5px;font-weight:600;color:var(--text);letter-spacing:-.01em}
+.tright{justify-self:end}
+.iconbtn{appearance:none;border:none;background:transparent;color:var(--dim);font-family:var(--sys);font-size:12px;padding:3px 7px;border-radius:5px;cursor:pointer}
+.iconbtn:hover{background:var(--chrome-2);color:var(--text)}
+
+.toolbar{flex:0 0 auto;background:var(--chrome);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:7px 12px;flex-wrap:wrap}
+.seg{display:flex;background:var(--chrome-2);border-radius:7px;padding:2px;gap:2px}
+.seg button{appearance:none;border:none;background:transparent;font-family:var(--sys);font-size:12px;font-weight:500;color:var(--text);padding:4px 13px;border-radius:5px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.16)}
+.spacer{flex:1 1 auto}
+.btn{appearance:none;font-family:var(--sys);font-size:12px;font-weight:500;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 11px;cursor:pointer}
+.btn:hover{background:var(--surface-alt)}
+.btn:active{background:var(--chrome-2)}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+.btn.primary:hover{filter:brightness(1.07)}
+.field{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:12px}
+select{font-family:var(--sys);font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:3px 6px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+.body{flex:1 1 auto;min-height:0;display:flex}
+.view{display:none;flex:1 1 auto;min-height:0;width:100%}
+.view.on{display:flex}
+
+/* editor */
+.editor{flex:1 1 auto;min-width:0;display:flex;position:relative;background:var(--surface)}
+.gutter{flex:0 0 auto;width:52px;background:var(--gutter);border-right:1px solid var(--line-soft);color:var(--faint);
+  font-family:var(--mono);font-size:12px;line-height:19px;text-align:right;padding:12px 8px 12px 0;overflow:hidden;user-select:none;font-variant-numeric:tabular-nums}
+.gutter span{display:block}
+.gutter span.bad{color:var(--red);font-weight:600}
+.pad{position:relative;flex:1 1 auto;min-width:0;overflow:auto}
+.pad pre,.pad textarea{margin:0;padding:12px 16px;font-family:var(--mono);font-size:12px;line-height:19px;
+  white-space:pre;tab-size:2;border:0;min-height:100%;width:max-content;min-width:100%}
+.pad pre{color:var(--text)}
+.pad textarea{position:absolute;inset:0;background:transparent;color:transparent;caret-color:var(--accent);resize:none;overflow:hidden;width:100%;height:100%}
+.pad textarea::selection{background:var(--accent-soft)}
+.tk-key{color:var(--k-key)}.tk-str{color:var(--k-str)}.tk-num{color:var(--k-num)}.tk-lit{color:var(--k-lit)}.tk-punc{color:var(--k-punc)}
+
+/* diff */
+.diffwrap{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;min-height:0}
+.panes{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1fr 1px 1fr}
+.rule{background:var(--line)}
+.pane{display:flex;flex-direction:column;min-width:0;min-height:0}
+.panehead{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:5px 12px;background:var(--surface-alt);border-bottom:1px solid var(--line-soft);font-size:11.5px;color:var(--dim)}
+.panehead b{color:var(--text);font-weight:600}
+.panebody{flex:1 1 auto;min-height:0;overflow:auto;background:var(--surface)}
+.panebody textarea{width:100%;height:100%;border:0;background:transparent;color:var(--text);font-family:var(--mono);font-size:12px;line-height:19px;padding:10px 14px;resize:none;white-space:pre}
+.dl{display:flex;font-family:var(--mono);font-size:12px;line-height:19px;white-space:pre}
+.dl .n{flex:0 0 44px;text-align:right;padding-right:10px;color:var(--faint);user-select:none;font-variant-numeric:tabular-nums}
+.dl .t{flex:1 1 auto;padding-right:14px}
+.dl.add{background:var(--green-bg)}
+.dl.del{background:var(--red-bg)}
+.dl.mod{background:var(--amber-bg)}
+.dl.gap{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--line-soft) 6px 7px)}
+
+.changes{flex:0 0 auto;height:172px;border-top:1px solid var(--line);background:var(--surface-alt);display:flex;flex-direction:column}
+.chead{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid var(--line-soft);font-size:11.5px;color:var(--dim)}
+.ctable{flex:1 1 auto;overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th{position:sticky;top:0;background:var(--surface-alt);text-align:left;font-weight:500;color:var(--dim);font-size:11px;letter-spacing:.03em;text-transform:uppercase;padding:5px 12px;border-bottom:1px solid var(--line-soft)}
+td{padding:4px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top;font-family:var(--mono);white-space:nowrap;max-width:340px;overflow:hidden;text-overflow:ellipsis}
+tbody tr:hover{background:var(--accent-soft)}
+.pill{display:inline-block;font-family:var(--sys);font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:9px}
+.pill.add{background:var(--green-bg);color:var(--green)}
+.pill.del{background:var(--red-bg);color:var(--red)}
+.pill.mod{background:var(--amber-bg);color:var(--amber)}
+.empty{padding:20px;color:var(--dim);font-family:var(--sys);text-align:center}
+
+.statusbar{flex:0 0 auto;height:27px;background:var(--chrome);border-top:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 12px;font-size:11.5px;color:var(--dim)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:0 0 auto}
+.dot.err{background:var(--red)}
+.dot.warn{background:var(--amber)}
+.status{display:flex;align-items:center;gap:6px;color:var(--text);font-weight:500}
+.status.err{color:var(--red)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;padding:0 4px}
+.note h3{margin:0 0 4px;font-size:12px;font-weight:600}
+.note p{margin:0;color:var(--dim);font-size:12px;line-height:1.5}
+.mini{appearance:none;font-family:var(--sys);font-size:11px;color:var(--dim);background:transparent;border:1px solid transparent;border-radius:5px;padding:1px 7px;cursor:pointer}
+.mini:hover{background:var(--chrome-2);color:var(--text);border-color:var(--line-soft)}
+.drop{outline:2px dashed var(--accent);outline-offset:-4px;background:var(--accent-soft)}
+.hint{font-size:11px;color:var(--faint)}
+</style>
+
+<div class="page">
+  <div class="lede">
+    <h1>JsonTooling</h1>
+    <span class="badge">Prototipo de UX</span>
+    <p>Validación con línea/columna, formateo sin pérdida y diff estructural. Referencia visual para el port a SwiftUI.</p>
+  </div>
+
+  <div class="win">
+    <div class="titlebar">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <div class="wtitle">pedido-4471.json</div>
+      <div class="tright"><button class="iconbtn" id="themeBtn" title="Cambiar apariencia">Apariencia</button></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Modo">
+        <button id="tabEd" aria-pressed="false">Editor</button>
+        <button id="tabDf" aria-pressed="true">Comparar</button>
+      </div>
+      <div class="spacer"></div>
+      <div id="edTools" style="display:none;gap:8px;align-items:center" class="field">
+        <label class="field">Sangría
+          <select id="indent"><option value="2">2 espacios</option><option value="4">4 espacios</option><option value="tab">Tabulador</option></select>
+        </label>
+        <button class="btn" id="impEd">Importar…</button>
+        <button class="btn" id="pasteEd">Pegar</button>
+        <button class="btn primary" id="fmt">Formatear</button>
+        <button class="btn" id="min">Minificar</button>
+        <button class="btn" id="sort">Ordenar claves</button>
+        <button class="btn" id="copy">Copiar</button>
+      </div>
+      <div id="dfTools" style="gap:8px;align-items:center" class="field">
+        <div class="seg" role="group" aria-label="Vista de comparación">
+          <button id="dfEdit" aria-pressed="false">Entradas</button>
+          <button id="dfView" aria-pressed="true">Diferencias</button>
+        </div>
+        <button class="btn" id="swap">Intercambiar</button>
+      </div>
+    </div>
+
+    <div class="body">
+      <!-- EDITOR -->
+      <section class="view" id="viewEd">
+        <div class="editor">
+          <div class="gutter" id="gutter"></div>
+          <div class="pad" id="pad">
+            <pre id="hl" aria-hidden="true"></pre>
+            <textarea id="src" spellcheck="false" autocapitalize="off" autocorrect="off" aria-label="Editor JSON"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- DIFF -->
+      <section class="view on" id="viewDf">
+        <div class="diffwrap">
+          <div class="panes">
+            <div class="pane">
+              <div class="panehead"><b>A</b> <span id="nameA">pedido-4471.json</span>
+                <button class="mini" data-imp="a">Importar</button><button class="mini" data-paste="a">Pegar</button>
+                <span class="spacer"></span><span id="stA"></span></div>
+              <div class="panebody" id="bodyA"><textarea id="ta" spellcheck="false" aria-label="JSON A"></textarea></div>
+            </div>
+            <div class="rule"></div>
+            <div class="pane">
+              <div class="panehead"><b>B</b> <span id="nameB">pedido-4471.remoto.json</span>
+                <button class="mini" data-imp="b">Importar</button><button class="mini" data-paste="b">Pegar</button>
+                <span class="spacer"></span><span id="stB"></span></div>
+              <div class="panebody" id="bodyB"><textarea id="tb" spellcheck="false" aria-label="JSON B"></textarea></div>
+            </div>
+          </div>
+          <div class="changes">
+            <div class="chead"><span id="chSummary">—</span><span class="spacer"></span><span>Comparación semántica por ruta, no por texto</span></div>
+            <div class="ctable"><table><thead><tr><th style="width:44%">Ruta</th><th style="width:9%">Cambio</th><th style="width:23.5%">A</th><th style="width:23.5%">B</th></tr></thead><tbody id="chBody"></tbody></table></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="statusbar">
+      <span class="status" id="stat"><span class="dot" id="statDot"></span><span id="statTxt">Listo</span></span>
+      <span class="spacer"></span>
+      <span class="mono" id="metaPos">Ln 1, Col 1</span>
+      <span class="mono" id="metaSize">—</span>
+      <span class="mono" id="metaNodes">—</span>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" accept=".json,.txt,application/json" hidden>
+
+  <div class="notes">
+    <div class="note"><h3>Formateo sin pérdida</h3><p>El formateador reemite los tokens originales, así <code class="mono">id: 90071992547409931</code> y <code class="mono">1.50</code> conservan su literal exacto. Un round-trip por <code class="mono">JSON.parse</code>/<code class="mono">stringify</code> los rompe.</p></div>
+    <div class="note"><h3>Errores con posición</h3><p>Parser propio con seguimiento de línea y columna: el mensaje apunta al carácter exacto y la línea se marca en el margen, en lugar del texto genérico del runtime.</p></div>
+    <div class="note"><h3>Diff estructural</h3><p>Compara árboles por ruta (<code class="mono">lineas[1].cantidad</code>), no líneas de texto, así reordenar claves no genera ruido. El alineado lado a lado se calcula encima.</p></div>
+  </div>
+</div>
+
+<script>
+/* ---------- tokenizer + parser con posiciones ---------- */
+function tokenize(src){
+  const t=[]; let i=0,line=1,col=1; const n=src.length;
+  const push=(type,raw,l,c)=>t.push({type,raw,line:l,col:c});
+  const adv=k=>{for(let j=0;j<k;j++){if(src[i]==="\n"){line++;col=1}else col++;i++}};
+  while(i<n){
+    const ch=src[i];
+    if(ch===" "||ch==="\t"||ch==="\r"||ch==="\n"){adv(1);continue}
+    const l=line,c=col;
+    if("{}[]:,".includes(ch)){push("punc",ch,l,c);adv(1);continue}
+    if(ch==='"'){
+      let j=i+1,ok=false;
+      while(j<n){const d=src[j];
+        if(d==="\\"){ if(j+1>=n) break; j+=2; continue}
+        if(d==='"'){ok=true;j++;break}
+        if(d==="\n") break;
+        j++;
+      }
+      if(!ok) return {error:{msg:"Cadena sin cerrar",line:l,col:c}};
+      const raw=src.slice(i,j); adv(raw.length); push("str",raw,l,c); continue;
+    }
+    if(/[-0-9]/.test(ch)){
+      const m=/^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/.exec(src.slice(i));
+      if(!m||m[0]==="-") return {error:{msg:"Número mal formado",line:l,col:c}};
+      adv(m[0].length); push("num",m[0],l,c); continue;
+    }
+    const w=/^(true|false|null)/.exec(src.slice(i));
+    if(w){adv(w[0].length);push("lit",w[0],l,c);continue}
+    return {error:{msg:`Carácter inesperado ${JSON.stringify(ch)}`,line:l,col:c}};
+  }
+  return {tokens:t};
+}
+function unq(raw){ try{return JSON.parse(raw)}catch(e){return raw.slice(1,-1)} }
+function parse(src){
+  const tz=tokenize(src);
+  if(tz.error) return {ok:false,error:tz.error};
+  const t=tz.tokens;
+  if(!t.length) return {ok:false,error:{msg:"Documento vacío",line:1,col:1}};
+  let p=0,count=0;
+  const peek=()=>t[p];
+  const err=(msg,tok)=>({stop:true,msg,line:tok?tok.line:lastLine(),col:tok?tok.col:1});
+  const lastLine=()=>{const k=t[t.length-1];return k?k.line:1};
+  function value(){
+    const tok=peek();
+    if(!tok) throw err("Fin de documento inesperado",null);
+    count++;
+    if(tok.type==="punc"&&tok.raw==="{") return obj();
+    if(tok.type==="punc"&&tok.raw==="[") return arr();
+    if(tok.type==="str"){p++;return unq(tok.raw)}
+    if(tok.type==="num"){p++;return {__num:tok.raw,valueOf(){return Number(tok.raw)}}}
+    if(tok.type==="lit"){p++;return tok.raw==="null"?null:tok.raw==="true"}
+    throw err(`Se esperaba un valor, se encontró "${tok.raw}"`,tok);
+  }
+  function obj(){
+    p++; const o={};
+    if(peek()&&peek().raw==="}"){p++;return o}
+    for(;;){
+      const k=peek();
+      if(!k||k.type!=="str") throw err("Se esperaba una clave entre comillas",k);
+      p++;
+      const colon=peek();
+      if(!colon||colon.raw!==":") throw err('Falta ":" después de la clave',colon);
+      p++;
+      o[unq(k.raw)]=value();
+      const nx=peek();
+      if(!nx) throw err('Falta "}"',null);
+      if(nx.raw===","){p++; if(peek()&&peek().raw==="}") throw err("Coma sobrante antes de \"}\"",peek()); continue}
+      if(nx.raw==="}"){p++;return o}
+      throw err('Se esperaba "," o "}"',nx);
+    }
+  }
+  function arr(){
+    p++; const a=[];
+    if(peek()&&peek().raw==="]"){p++;return a}
+    for(;;){
+      a.push(value());
+      const nx=peek();
+      if(!nx) throw err('Falta "]"',null);
+      if(nx.raw===","){p++; if(peek()&&peek().raw==="]") throw err("Coma sobrante antes de \"]\"",peek()); continue}
+      if(nx.raw==="]"){p++;return a}
+      throw err('Se esperaba "," o "]"',nx);
+    }
+  }
+  try{
+    const v=value();
+    if(p<t.length) throw err("Contenido sobrante tras el valor raíz",t[p]);
+    return {ok:true,value:v,tokens:t,count};
+  }catch(e){
+    if(!e||!e.stop) throw e;
+    return {ok:false,error:{msg:e.msg,line:e.line,col:e.col}};
+  }
+}
+/* ---------- formateo por reemisión de tokens (literales intactos) ---------- */
+function emit(tokens,indentUnit){
+  const pretty=indentUnit!==null; let out="",depth=0;
+  const nl=()=>pretty?"\n"+indentUnit.repeat(depth):"";
+  for(let i=0;i<tokens.length;i++){
+    const tk=tokens[i],r=tk.raw,prev=tokens[i-1];
+    if(r==="{"||r==="["){
+      const close=r==="{"?"}":"]";
+      if(tokens[i+1]&&tokens[i+1].raw===close){out+=r+close;i++;continue}
+      out+=r;depth++;out+=nl();continue;
+    }
+    if(r==="}"||r==="]"){depth--;out+=nl()+r;continue}
+    if(r===","){out+=","+(pretty?nl():"");continue}
+    if(r===":"){out+=pretty?": ":":";continue}
+    if(prev&&(prev.raw==="{"||prev.raw==="[")){out+=r;continue}
+    out+=r;
+  }
+  return out;
+}
+function sortKeys(v){
+  if(Array.isArray(v)) return v.map(sortKeys);
+  if(v&&typeof v==="object"&&!("__num" in v)){
+    const o={};Object.keys(v).sort().forEach(k=>o[k]=sortKeys(v[k]));return o;
+  }
+  return v;
+}
+function toPlain(v){
+  if(Array.isArray(v)) return v.map(toPlain);
+  if(v&&typeof v==="object"){ if("__num" in v) return v.__num; const o={};for(const k in v)o[k]=toPlain(v[k]);return o }
+  return v;
+}
+function stringifyNums(v,indent){
+  const raw=JSON.stringify(v,(k,val)=>(val&&typeof val==="object"&&"__num" in val)?" "+val.__num+" ":val,indent);
+  return raw.replace(/" (-?[0-9][^ ]*) "/g,"$1");
+}
+/* ---------- resaltado ---------- */
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function highlight(src){
+  const tz=tokenize(src);
+  if(tz.error) return esc(src);
+  const t=tz.tokens; let out="",cursor=0,idx=0;
+  // reconstruye respetando espacios originales
+  let i=0,line=1,col=1;
+  const pos=tk=>{ // localizar token por línea/col en el texto
+    return null;
+  };
+  // enfoque simple: recorrer texto y consumir tokens en orden
+  let ti=0;
+  while(i<src.length){
+    const tk=t[ti];
+    if(tk&&matchAt(src,i,tk)){
+      const cls=tk.type==="str"?(isKey(t,ti)?"tk-key":"tk-str"):tk.type==="num"?"tk-num":tk.type==="lit"?"tk-lit":"tk-punc";
+      out+=`<span class="${cls}">${esc(tk.raw)}</span>`; i+=tk.raw.length; ti++;
+    } else { out+=esc(src[i]); i++; }
+  }
+  return out;
+}
+function matchAt(src,i,tk){ return src.startsWith(tk.raw,i) }
+function isKey(t,ti){ const nx=t[ti+1]; return !!(nx&&nx.raw===":") }
+
+/* ---------- diff estructural ---------- */
+function kindOf(v){ if(v===null)return"null"; if(Array.isArray(v))return"array"; if(typeof v==="object")return"object"; return typeof v }
+function short(v){
+  if(v===undefined) return "—";
+  const s=typeof v==="object"&&v!==null?JSON.stringify(v):JSON.stringify(v);
+  return s.length>60?s.slice(0,57)+"…":s;
+}
+function diff(a,b,path="",acc=[]){
+  const ka=kindOf(a),kb=kindOf(b);
+  if(ka!==kb){acc.push({path:path||"$",kind:"mod",a,b});return acc}
+  if(ka==="object"){
+    const keys=[...new Set([...Object.keys(a),...Object.keys(b)])];
+    for(const k of keys){
+      const p=path?`${path}.${k}`:k;
+      if(!(k in a)) acc.push({path:p,kind:"add",a:undefined,b:b[k]});
+      else if(!(k in b)) acc.push({path:p,kind:"del",a:a[k],b:undefined});
+      else diff(a[k],b[k],p,acc);
+    }
+    return acc;
+  }
+  if(ka==="array"){
+    const n=Math.max(a.length,b.length);
+    for(let i=0;i<n;i++){
+      const p=`${path}[${i}]`;
+      if(i>=a.length) acc.push({path:p,kind:"add",a:undefined,b:b[i]});
+      else if(i>=b.length) acc.push({path:p,kind:"del",a:a[i],b:undefined});
+      else diff(a[i],b[i],p,acc);
+    }
+    return acc;
+  }
+  if(a!==b) acc.push({path:path||"$",kind:"mod",a,b});
+  return acc;
+}
+/* alineado lado a lado por LCS de líneas */
+function align(A,B){
+  let s=0; const n=A.length,m=B.length;
+  while(s<n&&s<m&&A[s]===B[s]) s++;
+  let e=0; while(e<n-s&&e<m-s&&A[n-1-e]===B[m-1-e]) e++;
+  const a=A.slice(s,n-e),b=B.slice(s,m-e),rows=[];
+  for(let i=0;i<s;i++) rows.push({l:A[i],r:B[i],k:"eq"});
+  if(a.length*b.length<=1400*1400){
+    const dp=[];for(let i=0;i<=a.length;i++)dp.push(new Uint16Array(b.length+1));
+    for(let i=a.length-1;i>=0;i--)for(let j=b.length-1;j>=0;j--)
+      dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+    let i=0,j=0;
+    while(i<a.length&&j<b.length){
+      if(a[i]===b[j]){rows.push({l:a[i],r:b[j],k:"eq"});i++;j++}
+      else if(dp[i+1][j]>=dp[i][j+1]){rows.push({l:a[i],r:null,k:"del"});i++}
+      else {rows.push({l:null,r:b[j],k:"add"});j++}
+    }
+    while(i<a.length){rows.push({l:a[i++],r:null,k:"del"})}
+    while(j<b.length){rows.push({l:null,r:b[j++],k:"add"})}
+  } else {
+    const n2=Math.max(a.length,b.length);
+    for(let i=0;i<n2;i++) rows.push({l:a[i]??null,r:b[i]??null,k:(a[i]===b[i])?"eq":"mod"});
+  }
+  for(let i=0;i<e;i++) rows.push({l:A[n-e+i],r:B[m-e+i],k:"eq"});
+  return rows;
+}
+
+/* ---------- datos de ejemplo ---------- */
+const SAMPLE_A=`{
+  "pedidoId": "4471-AC",
+  "estado": "EN_PREPARACION",
+  "creadoEn": "2026-08-31T14:02:11Z",
+  "cliente": { "id": 90071992547409931, "nombre": "Marta Ferreira", "canal": "web" },
+  "envio": { "metodo": "estandar", "prometido": "2026-09-04", "transportista": null },
+  "lineas": [
+    { "sku": "TL-0091", "descripcion": "Router dual-band", "cantidad": 1, "precio": 42.90 },
+    { "sku": "TL-4420", "descripcion": "Cable Cat6 3m", "cantidad": 2, "precio": 7.50 }
+  ],
+  "totales": { "subtotal": 57.90, "impuestos": 12.16, "total": 70.06 }
+}`;
+const SAMPLE_B=`{
+  "pedidoId": "4471-AC",
+  "estado": "ENVIADO",
+  "creadoEn": "2026-08-31T14:02:11Z",
+  "cliente": { "id": 90071992547409931, "nombre": "Marta Ferreira", "canal": "app" },
+  "envio": { "metodo": "express", "prometido": "2026-09-02", "transportista": "SEUR", "seguimiento": "SE9928471X" },
+  "lineas": [
+    { "sku": "TL-0091", "descripcion": "Router dual-band", "cantidad": 1, "precio": 42.90 },
+    { "sku": "TL-4420", "descripcion": "Cable Cat6 3m", "cantidad": 3, "precio": 7.50 }
+  ],
+  "totales": { "subtotal": 65.40, "impuestos": 13.73, "total": 79.13 }
+}`;
+
+/* ---------- estado / UI ---------- */
+const $=id=>document.getElementById(id);
+const src=$("src"),hl=$("hl"),gutter=$("gutter"),pad=$("pad");
+const ta=$("ta"),tb=$("tb");
+let diffMode="view";
+
+function indentUnit(){const v=$("indent").value;return v==="tab"?"\t":" ".repeat(+v)}
+
+function setStatus(ok,text,level){
+  const cls=level||(ok?"":"err");
+  $("statDot").className="dot"+(cls?" "+cls:"");
+  $("stat").className="status"+(cls==="err"?" err":"");
+  $("statTxt").textContent=text;
+}
+function renderEditor(){
+  const text=src.value;
+  hl.innerHTML=highlight(text)+"\n";
+  const lines=text.split("\n").length;
+  const res=parse(text);
+  const badLine=res.ok?-1:res.error.line;
+  let g="";for(let i=1;i<=lines;i++) g+=`<span class="${i===badLine?"bad":""}">${i}</span>`;
+  gutter.innerHTML=g;
+  if(res.ok){
+    setStatus(true,"JSON válido");
+    $("metaNodes").textContent=res.count+" nodos";
+  }else{
+    setStatus(false,`${res.error.msg} — línea ${res.error.line}, columna ${res.error.col}`);
+    $("metaNodes").textContent="—";
+  }
+  const bytes=new TextEncoder().encode(text).length;
+  $("metaSize").textContent=bytes<1024?bytes+" B":(bytes/1024).toFixed(1)+" KB";
+  updateCaret();
+}
+function updateCaret(){
+  const upto=src.value.slice(0,src.selectionStart);
+  const l=upto.split("\n"),ln=l.length,col=l[l.length-1].length+1;
+  $("metaPos").textContent=`Ln ${ln}, Col ${col}`;
+}
+pad.addEventListener("scroll",()=>{gutter.scrollTop=pad.scrollTop;gutter.style.transform=`translateY(${-pad.scrollTop}px)`});
+src.addEventListener("input",renderEditor);
+src.addEventListener("keyup",updateCaret);
+src.addEventListener("click",updateCaret);
+src.addEventListener("keydown",e=>{
+  if(e.key==="Tab"){e.preventDefault();const s=src.selectionStart,en=src.selectionEnd,u=indentUnit();
+    src.value=src.value.slice(0,s)+u+src.value.slice(en);src.selectionStart=src.selectionEnd=s+u.length;renderEditor()}
+  if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==="f"){e.preventDefault();doFormat()}
+});
+function doFormat(){
+  const r=parse(src.value); if(!r.ok){renderEditor();return}
+  src.value=emit(r.tokens,indentUnit()); renderEditor();
+}
+$("fmt").onclick=doFormat;
+$("min").onclick=()=>{const r=parse(src.value);if(!r.ok){renderEditor();return}src.value=emit(r.tokens,null);renderEditor()};
+$("sort").onclick=()=>{const r=parse(src.value);if(!r.ok){renderEditor();return}
+  src.value=stringifyNums(sortKeys(r.value),indentUnit()==="\t"?"\t":indentUnit());renderEditor()};
+$("copy").onclick=async e=>{try{await navigator.clipboard.writeText(src.value);e.target.textContent="Copiado";setTimeout(()=>e.target.textContent="Copiar",1200)}catch(_){e.target.textContent="No disponible";setTimeout(()=>e.target.textContent="Copiar",1200)}};
+
+/* diff render */
+function paneStatus(el,res){
+  el.textContent=res.ok?"válido":`error en línea ${res.error.line}`;
+  el.style.color=res.ok?"var(--green)":"var(--red)";
+}
+function renderDiff(){
+  const ra=parse(ta.value),rb=parse(tb.value);
+  paneStatus($("stA"),ra);paneStatus($("stB"),rb);
+  if(!ra.ok||!rb.ok){
+    setStatus(false,!ra.ok?`A: ${ra.error.msg} (línea ${ra.error.line})`:`B: ${rb.error.msg} (línea ${rb.error.line})`);
+    $("chBody").innerHTML=`<tr><td colspan="4" class="empty">Corrige el JSON inválido para comparar.</td></tr>`;
+    $("chSummary").textContent="Sin comparación";
+    if(diffMode==="view") showEditors();
+    return;
+  }
+  const A=toPlain(ra.value),B=toPlain(rb.value);
+  const changes=diff(A,B);
+  $("chSummary").innerHTML=changes.length===0?"Sin diferencias estructurales"
+    :`<b>${changes.length}</b> diferencia${changes.length===1?"":"s"} · `+
+     `${changes.filter(c=>c.kind==="add").length} añadidas, ${changes.filter(c=>c.kind==="del").length} eliminadas, ${changes.filter(c=>c.kind==="mod").length} modificadas`;
+  $("chBody").innerHTML=changes.length===0
+    ? `<tr><td colspan="4" class="empty">Los dos documentos son equivalentes.</td></tr>`
+    : changes.map(c=>{
+        const label=c.kind==="add"?"añadido":c.kind==="del"?"eliminado":"modificado";
+        return `<tr><td>${esc(c.path)}</td><td><span class="pill ${c.kind}">${label}</span></td><td>${esc(short(c.a))}</td><td>${esc(short(c.b))}</td></tr>`;
+      }).join("");
+  setStatus(true,changes.length===0?"Documentos equivalentes":`${changes.length} diferencia${changes.length===1?"":"s"}`,changes.length===0?"":"warn");
+  const bytes=new TextEncoder().encode(ta.value).length+new TextEncoder().encode(tb.value).length;
+  $("metaSize").textContent=(bytes/1024).toFixed(1)+" KB";
+  $("metaNodes").textContent=`${ra.count} / ${rb.count} nodos`;
+  $("metaPos").textContent="A vs B";
+  if(diffMode==="view") showAligned(emit(ra.tokens,"  ").split("\n"),emit(rb.tokens,"  ").split("\n"));
+}
+function lineHTML(num,text,k){
+  return `<div class="dl ${k}"><span class="n">${text===null?"":num}</span><span class="t">${text===null?"":highlight(text)}</span></div>`;
+}
+function showAligned(A,B){
+  const rows=align(A,B);
+  let la=0,lb=0,ha="",hb="";
+  for(const r of rows){
+    if(r.k==="eq"){la++;lb++;ha+=lineHTML(la,r.l,"");hb+=lineHTML(lb,r.r,"")}
+    else if(r.k==="del"){la++;ha+=lineHTML(la,r.l,"del");hb+=lineHTML("",null,"gap")}
+    else if(r.k==="add"){lb++;ha+=lineHTML("",null,"gap");hb+=lineHTML(lb,r.r,"add")}
+    else {la++;lb++;ha+=lineHTML(la,r.l,"mod");hb+=lineHTML(lb,r.r,"mod")}
+  }
+  $("bodyA").innerHTML=ha;$("bodyB").innerHTML=hb;
+  const a=$("bodyA"),b=$("bodyB");
+  let lock=false;
+  a.onscroll=()=>{if(lock)return;lock=true;b.scrollTop=a.scrollTop;lock=false};
+  b.onscroll=()=>{if(lock)return;lock=true;a.scrollTop=b.scrollTop;lock=false};
+}
+function showEditors(){
+  $("bodyA").innerHTML="";$("bodyB").innerHTML="";
+  $("bodyA").appendChild(ta);$("bodyB").appendChild(tb);
+}
+$("dfEdit").onclick=()=>{diffMode="edit";$("dfEdit").ariaPressed="true";$("dfView").ariaPressed="false";showEditors();renderDiff()};
+$("dfView").onclick=()=>{diffMode="view";$("dfEdit").ariaPressed="false";$("dfView").ariaPressed="true";renderDiff()};
+$("swap").onclick=()=>{const t=ta.value;ta.value=tb.value;tb.value=t;renderDiff()};
+ta.addEventListener("input",renderDiff);tb.addEventListener("input",renderDiff);
+
+/* tabs */
+function tab(which){
+  const ed=which==="ed";
+  $("tabEd").ariaPressed=String(ed);$("tabDf").ariaPressed=String(!ed);
+  $("viewEd").classList.toggle("on",ed);$("viewDf").classList.toggle("on",!ed);
+  $("edTools").style.display=ed?"flex":"none";
+  $("dfTools").style.display=ed?"none":"flex";
+  document.querySelector(".wtitle").textContent=ed?"pedido-4471.json":"Comparar · pedido-4471";
+  ed?renderEditor():renderDiff();
+}
+$("tabEd").onclick=()=>tab("ed");
+$("tabDf").onclick=()=>tab("df");
+$("themeBtn").onclick=()=>{
+  const cur=document.documentElement.getAttribute("data-theme");
+  const dark=cur?cur==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme",dark?"light":"dark");
+};
+
+/* ---------- importar / pegar / arrastrar ---------- */
+const MAX_BYTES=10*1024*1024;
+let importTarget="ed";
+function loadInto(target,text,name){
+  if(text.length>MAX_BYTES){setStatus(false,`El archivo supera 10 MB (${(text.length/1048576).toFixed(1)} MB) — fuera del alcance de la v1`);return}
+  if(target==="ed"){src.value=text;if(name)document.querySelector(".wtitle").textContent=name;tab("ed");renderEditor()}
+  else{const el=target==="a"?ta:tb;el.value=text;if(name)$(target==="a"?"nameA":"nameB").textContent=name;tab("df");renderDiff()}
+}
+function readFile(f,target){
+  if(!f)return;
+  if(f.size>MAX_BYTES){setStatus(false,`"${f.name}" pesa ${(f.size/1048576).toFixed(1)} MB — el límite de la v1 son 10 MB`);return}
+  const r=new FileReader();
+  r.onload=()=>loadInto(target,String(r.result),f.name);
+  r.onerror=()=>setStatus(false,`No se pudo leer "${f.name}"`);
+  r.readAsText(f);
+}
+$("fileInput").addEventListener("change",e=>{readFile(e.target.files[0],importTarget);e.target.value=""});
+function pickFile(target){importTarget=target;$("fileInput").click()}
+async function pasteInto(target){
+  try{const t=await navigator.clipboard.readText();if(t.trim())loadInto(target,t,"portapapeles")}
+  catch(_){setStatus(false,"El navegador bloqueó el portapapeles — usa ⌘V dentro del editor")}
+}
+$("impEd").onclick=()=>pickFile("ed");
+$("pasteEd").onclick=()=>pasteInto("ed");
+document.querySelectorAll("[data-imp]").forEach(b=>b.onclick=()=>pickFile(b.dataset.imp));
+document.querySelectorAll("[data-paste]").forEach(b=>b.onclick=()=>pasteInto(b.dataset.paste));
+[["viewEd","ed"],["bodyA","a"],["bodyB","b"]].forEach(([id,target])=>{
+  const el=$(id);
+  el.addEventListener("dragover",e=>{e.preventDefault();el.classList.add("drop")});
+  el.addEventListener("dragleave",()=>el.classList.remove("drop"));
+  el.addEventListener("drop",e=>{e.preventDefault();el.classList.remove("drop");readFile(e.dataTransfer.files[0],target)});
+});
+
+/* init */
+src.value=SAMPLE_A;
+ta.value=SAMPLE_A;tb.value=SAMPLE_B;
+renderEditor();renderDiff();
+</script>
+
+</body>
+</html>

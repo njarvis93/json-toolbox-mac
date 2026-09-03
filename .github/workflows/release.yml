@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  # También a mano, para poder probar el empaquetado sin publicar un tag.
+  workflow_dispatch:
+
+jobs:
+  package:
+    name: Empaquetar el .app
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      # Antes de publicar nada: si los tests no pasan, no se publica.
+      - name: Tests
+        run: swift test
+
+      # `package.sh` compila en Release para arm64 + x86_64, firma ad-hoc, quita la cuarentena
+      # y comprime con ditto (un `zip` a secas rompe el bundle y anula la firma).
+      - name: Empaquetar
+        run: ./Scripts/package.sh
+
+      - name: Localizar el zip
+        id: zip
+        run: echo "ruta=$(ls build/JsonTooling-*.zip | head -1)" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar la release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: ${{ steps.zip.outputs.ruta }}
+          # La app va firmada **ad-hoc**, no notarizada: notarizar exige cuenta de
+          # desarrollador de pago. El zip lleva un LEEME con el paso de la cuarentena.
+          body: |
+            Compilación universal (arm64 + x86_64), firmada ad-hoc y **sin notarizar**.
+
+            La primera vez, macOS avisará de que no puede comprobar el software. Dentro del
+            zip va un `LEEME.txt` con los dos caminos para abrirla: clic derecho → Abrir, o
+            `xattr -dr com.apple.quarantine /Applications/JsonTooling.app`.
+
+      # Cuando se lanza a mano no hay tag: el zip queda como artefacto de la ejecución.
+      - name: Guardar como artefacto
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: actions/upload-artifact@v7
+        with:
+          name: JsonTooling-app
+          path: ${{ steps.zip.outputs.ruta }}
