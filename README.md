@@ -138,5 +138,5 @@ Código **visible, no abierto**: [PolyForm Noncommercial 1.0.0](LICENSE). Puedes
 compilarlo y usarlo para cualquier fin no comercial. El uso comercial requiere una licencia
 aparte — abre una issue para pedirla.
 
-Las versiones publicadas antes del 2026-09-03 salieron bajo MIT, y ese permiso sigue en pie para
-quien obtuviera una copia entonces.
+El proyecto se desarrolló en privado bajo MIT hasta el 2026-09-03, pero ninguna de esas versiones
+se distribuyó: este repositorio empieza en el commit inicial, ya bajo PolyForm.
